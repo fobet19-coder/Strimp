@@ -90,7 +90,7 @@ local function LoadMainHub()
     _G.TracersEnabled = false
     _G.UnventoryEnabled = false
 
-    -- Creación de la Interfaz Estilo Lexus PvP (Aumentamos un poco la altura para el nuevo botón)
+    -- Creación de la Interfaz Estilo Lexus PvP
     local ScreenGui = Instance.new("ScreenGui", CoreGui)
     ScreenGui.Name = "LexusPVPUI"
     ScreenGui.ResetOnSpawn = false
@@ -207,7 +207,6 @@ local function LoadMainHub()
             UnventoryBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
             UnventoryBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
             
-            -- Ocultar partes del personaje localmente
             if LP.Character then
                 for _, part in ipairs(LP.Character:GetDescendants()) do
                     if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
@@ -222,16 +221,10 @@ local function LoadMainHub()
             UnventoryBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
             UnventoryBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
             
-            -- Restaurar visibilidad del personaje
             if LP.Character then
                 for _, part in ipairs(LP.Character:GetDescendants()) do
                     if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        if part.Name == "Head" then
-                            part.Transparency = 0
-                        else
-                            -- Ajusta según tus accesorios o partes originales si es necesario
-                            part.Transparency = 0 
-                        end
+                        part.Transparency = 0
                     elseif part:IsA("Decal") then
                         part.Transparency = 0
                     end
@@ -496,4 +489,12 @@ local function LoadMainHub()
                 
                 -- Gestionar Tracers Rojos
                 if _G.TracersEnabled and isValid and tracerObj then
-                    local rootPos, onScreen = Camera:WorldToVie
+                    local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                    if onScreen then
+                        tracerObj.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        tracerObj.To = Vector2.new(rootPos.X, rootPos.Y)
+                        tracerObj.Visible = true
+                    else
+                        tracerObj.Visible = false
+                    end
+                elseif tr
