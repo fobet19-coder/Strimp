@@ -1,140 +1,474 @@
--- =====================================================================
--- LEXUS ELITE V13 | GITHUB RAW VERSION
--- =====================================================================
-local P = game:GetService("Players")
-local RS = game:GetService("RunService")
-local Cam = workspace.CurrentCamera
-local LP = P.LocalPlayer
+-- ==========================================
+-- LEXUS PVP | SISTEMA DE VERIFICACIÓN DE LICENCIA
+-- ==========================================
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LP = Players.LocalPlayer
 
-local MaxDist = 80   
-local MinFOV = 120   
+local CORRECT_KEY = "LIC-PRD-SPI"
 
-_G.LexusActive = true
+-- Eliminar interfaz previa si existe
+if CoreGui:FindFirstChild("LexusKeySystem") then
+    CoreGui.LexusKeySystem:Destroy()
+end
+if CoreGui:FindFirstChild("LexusPVPUI") then
+    CoreGui.LexusPVPUI:Destroy()
+end
 
--- Círculo de FOV fijo con efecto RGB (Rainbow) en la pantalla
-local FOVGui = Instance.new("ScreenGui", game.CoreGui)
-FOVGui.Name = "LexusFOVDisplay"
-local FOFCircle = Instance.new("Frame", FOVGui)
-FOFCircle.Size = UDim2.new(0, MinFOV * 2, 0, MinFOV * 2)
-FOFCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-FOFCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-FOFCircle.BackgroundTransparency = 1
-local UIC = Instance.new("UICorner", FOFCircle)
-UIC.CornerRadius = UDim.new(1, 0)
-local UIS = Instance.new("UIStroke", FOFCircle)
-UIS.Thickness = 2
+-- ==========================================
+-- INTERFAZ DE VERIFICACIÓN (KEY SYSTEM)
+-- ==========================================
+local KeyScreen = Instance.new("ScreenGui", CoreGui)
+KeyScreen.Name = "LexusKeySystem"
+KeyScreen.ResetOnSpawn = false
 
--- Bucle Rainbow para el FOV
-task.spawn(function()
-    while FOFCircle and FOFCircle.Parent and _G.LexusActive do
-        for i = 0, 1, 0.005 do
-            if not _G.LexusActive then break end
-            UIS.Color = Color3.fromHSV(i, 1, 1)
-            task.wait(0.03)
-        end
-    end
-end)
+local KeyFrame = Instance.new("Frame", KeyScreen)
+KeyFrame.Size = UDim2.new(0, 300, 0, 180)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -90)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+KeyFrame.BorderSizePixel = 0
+KeyFrame.Active = true
+KeyFrame.Draggable = true
+Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 10)
 
--- Botón flotante para apagar o encender el script
-local ToggleGui = Instance.new("ScreenGui", game.CoreGui)
-ToggleGui.Name = "LexusToggleBtn"
-local OffBtn = Instance.new("TextButton", ToggleGui)
-OffBtn.Size = UDim2.new(0, 45, 0, 45)
-OffBtn.Position = UDim2.new(0.02, 0, 0.25, 0)
-OffBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-OffBtn.Text = "OFF"
-OffBtn.TextColor3 = Color3.fromRGB(255, 105, 180)
-OffBtn.Font = Enum.Font.GothamBold
-OffBtn.TextSize = 12
-OffBtn.Draggable = true
-Instance.new("UICorner", OffBtn).CornerRadius = UDim.new(1, 0)
-local OffStroke = Instance.new("UIStroke", OffBtn)
-OffStroke.Color = Color3.fromRGB(255, 105, 180)
-OffStroke.Thickness = 1.5
+local KeyStroke = Instance.new("UIStroke", KeyFrame)
+KeyStroke.Color = Color3.fromRGB(255, 140, 0)
+KeyStroke.Thickness = 2
 
-OffBtn.MouseButton1Click:Connect(function()
-    _G.LexusActive = not _G.LexusActive
-    if _G.LexusActive then
-        OffBtn.Text = "OFF"
-        OffBtn.TextColor3 = Color3.fromRGB(255, 105, 180)
-        FOVGui.Enabled = true
-    else
-        OffBtn.Text = "ON"
-        OffBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
-        FOVGui.Enabled = false
-        for _, p in pairs(P:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("LexusTracerActive") then 
-                p.Character.LexusTracerActive:Destroy() 
-            end
-        end
-    end
-end)
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Size = UDim2.new(1, 0, 0, 40)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Text = "⚡ LEXUS PVP - KEY SYSTEM ⚡"
+KeyTitle.TextColor3 = Color3.fromRGB(255, 140, 0)
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.TextSize = 13
 
-RS.RenderStepped:Connect(function()
-    if not _G.LexusActive then return end
+local TextBox = Instance.new("TextBox", KeyFrame)
+TextBox.Size = UDim2.new(1, -40, 0, 36)
+TextBox.Position = UDim2.new(0, 20, 0, 50)
+TextBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.PlaceholderText = "Ingresa tu Key aquí..."
+TextBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+TextBox.Text = ""
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 12
+Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 6)
 
-    local target = nil
-    local closestDist = MinFOV
+local StatusLabel = Instance.new("TextLabel", KeyFrame)
+StatusLabel.Size = UDim2.new(1, -40, 0, 20)
+StatusLabel.Position = UDim2.new(0, 20, 0, 92)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = ""
+StatusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 11
 
-    for _, v in pairs(P:GetPlayers()) do
-        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Head") and v.Character.Humanoid.Health > 0 then
-            local hrp = v.Character.HumanoidRootPart
-            local head = v.Character.Head
-            local pos, vis = Cam:WorldToViewportPoint(hrp.Position)
-            local dist = (hrp.Position - Cam.CFrame.Position).Magnitude
-            
-            local tracerGui = v.Character:FindFirstChild("LexusTracerActive")
-            if vis and dist <= MaxDist and _G.LexusActive then
-                if not tracerGui then
-                    local sg = Instance.new("ScreenGui", game.CoreGui)
-                    sg.Name = "LexusTracerActive"
-                    local line = Instance.new("Frame", sg)
-                    line.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
-                    line.BorderSizePixel = 0
-                    
-                    task.spawn(function()
-                        while _G.LexusActive and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 and (hrp.Position - Cam.CFrame.Position).Magnitude <= MaxDist do
-                            local pPos, pVis = Cam:WorldToViewportPoint(hrp.Position)
-                            if pVis then
-                                local centerScreen = Vector2.new(Cam.ViewportSize.X / 2, Cam.ViewportSize.Y)
-                                local targetPos = Vector2.new(pPos.X, pPos.Y)
-                                local magnitude = (targetPos - centerScreen).Magnitude
-                                line.Size = UDim2.new(0, 1.5, 0, magnitude)
-                                line.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
-                                line.AnchorPoint = Vector2.new(0.5, 1)
-                                line.Rotation = math.deg(math.atan2(targetPos.Y - centerScreen.Y, targetPos.X - centerScreen.X)) + 90
-                                line.Visible = true
-                            else
-                                line.Visible = false
-                            end
-                            task.wait()
-                        end
-                        sg:Destroy()
-                    end)
-                end
-            else
-                if v.Character and v.Character:FindFirstChild("LexusTracerActive") then
-                    v.Character.LexusTracerActive:Destroy()
-                end
-            end
+local CheckBtn = Instance.new("TextButton", KeyFrame)
+CheckBtn.Size = UDim2.new(1, -40, 0, 32)
+CheckBtn.Position = UDim2.new(0, 20, 0, 122)
+CheckBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
+CheckBtn.Text = "Check Key"
+CheckBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
+CheckBtn.Font = Enum.Font.GothamBold
+CheckBtn.TextSize = 12
+Instance.new("UICorner", CheckBtn).CornerRadius = UDim.new(0, 6)
 
-            if vis and dist <= MaxDist then
-                local mouseDist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Cam.ViewportSize.X/2, Cam.ViewportSize.Y/2)).Magnitude
-                if mouseDist < closestDist then
-                    closestDist = mouseDist
-                    target = head
-                end
-            end
+-- Función para cargar el Hub Principal tras verificar la Key
+local function LoadMainHub()
+    KeyScreen:Destroy()
+
+    local RunService = game:GetService("RunService")
+    local Camera = workspace.CurrentCamera
+
+    -- Variables de Estado Globales
+    _G.AimEnabled = false
+    _G.MaxDistance = 1000
+    _G.FOVRadius = 500
+    _G.AimIntensity = 0.5 
+    _G.NamesEnabled = false
+    _G.TracersEnabled = false
+
+    -- Creación de la Interfaz Estilo Lexus PvP
+    local ScreenGui = Instance.new("ScreenGui", CoreGui)
+    ScreenGui.Name = "LexusPVPUI"
+    ScreenGui.ResetOnSpawn = false
+
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0, 220, 0, 325)
+    MainFrame.Position = UDim2.new(0, 30, 0.5, -162)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+    local FrameStroke = Instance.new("UIStroke", MainFrame)
+    FrameStroke.Color = Color3.fromRGB(255, 140, 0)
+    FrameStroke.Thickness = 2
+
+    -- Título
+    local Title = Instance.new("TextLabel", MainFrame)
+    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.BackgroundTransparency = 1
+    Title.Text = "⚡ LEXUS PVP ⚡"
+    Title.TextColor3 = Color3.fromRGB(255, 140, 0)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 13
+
+    -- Botón Toggle Aimlock / FOV
+    local ToggleBtn = Instance.new("TextButton", MainFrame)
+    ToggleBtn.Size = UDim2.new(1, -20, 0, 28)
+    ToggleBtn.Position = UDim2.new(0, 10, 0, 35)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ToggleBtn.Text = "Aimlock + FOV: [OFF]"
+    ToggleBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    ToggleBtn.Font = Enum.Font.GothamSemibold
+    ToggleBtn.TextSize = 11
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
+
+    ToggleBtn.MouseButton1Click:Connect(function()
+        _G.AimEnabled = not _G.AimEnabled
+        if _G.AimEnabled then
+            ToggleBtn.Text = "Aimlock + FOV: [ON]"
+            ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
         else
-            if v.Character and v.Character:FindFirstChild("LexusTracerActive") then v.Character.LexusTracerActive:Destroy() end
+            ToggleBtn.Text = "Aimlock + FOV: [OFF]"
+            ToggleBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+
+    -- Botón Toggle Names
+    local NamesBtn = Instance.new("TextButton", MainFrame)
+    NamesBtn.Size = UDim2.new(1, -20, 0, 28)
+    NamesBtn.Position = UDim2.new(0, 10, 0, 68)
+    NamesBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NamesBtn.Text = "Names: [OFF]"
+    NamesBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    NamesBtn.Font = Enum.Font.GothamSemibold
+    NamesBtn.TextSize = 10
+    Instance.new("UICorner", NamesBtn).CornerRadius = UDim.new(0, 6)
+
+    NamesBtn.MouseButton1Click:Connect(function()
+        _G.NamesEnabled = not _G.NamesEnabled
+        if _G.NamesEnabled then
+            NamesBtn.Text = "Names: [ON]"
+            NamesBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
+            NamesBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
+        else
+            NamesBtn.Text = "Names: [OFF]"
+            NamesBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            NamesBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+
+    -- Botón Toggle Tracers
+    local TracersBtn = Instance.new("TextButton", MainFrame)
+    TracersBtn.Size = UDim2.new(1, -20, 0, 28)
+    TracersBtn.Position = UDim2.new(0, 10, 0, 101)
+    TracersBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TracersBtn.Text = "Tracers: [OFF]"
+    TracersBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TracersBtn.Font = Enum.Font.GothamSemibold
+    TracersBtn.TextSize = 10
+    Instance.new("UICorner", TracersBtn).CornerRadius = UDim.new(0, 6)
+
+    TracersBtn.MouseButton1Click:Connect(function()
+        _G.TracersEnabled = not _G.TracersEnabled
+        if _G.TracersEnabled then
+            TracersBtn.Text = "Tracers: [ON]"
+            TracersBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
+            TracersBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
+        else
+            TracersBtn.Text = "Tracers: [OFF]"
+            TracersBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            TracersBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+
+    -- Texto de Distancia
+    local DistLabel = Instance.new("TextLabel", MainFrame)
+    DistLabel.Size = UDim2.new(1, -20, 0, 18)
+    DistLabel.Position = UDim2.new(0, 10, 0, 135)
+    DistLabel.BackgroundTransparency = 1
+    DistLabel.Text = "Distancia Max: 1000 studs"
+    DistLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DistLabel.Font = Enum.Font.Gotham
+    DistLabel.TextSize = 10
+    DistLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Botones Distancia (+ / -)
+    local PlusBtn = Instance.new("TextButton", MainFrame)
+    PlusBtn.Size = UDim2.new(0, 92, 0, 22)
+    PlusBtn.Position = UDim2.new(0, 10, 0, 155)
+    PlusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    PlusBtn.Text = "+ Distancia"
+    PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PlusBtn.Font = Enum.Font.Gotham
+    PlusBtn.TextSize = 10
+    Instance.new("UICorner", PlusBtn).CornerRadius = UDim.new(0, 4)
+
+    PlusBtn.MouseButton1Click:Connect(function()
+        if _G.MaxDistance < 2000 then
+            _G.MaxDistance = _G.MaxDistance + 200
+            DistLabel.Text = "Distancia Max: " .. _G.MaxDistance .. " studs"
+        end
+    end)
+
+    local MinusBtn = Instance.new("TextButton", MainFrame)
+    MinusBtn.Size = UDim2.new(0, 92, 0, 22)
+    MinusBtn.Position = UDim2.new(0, 118, 0, 155)
+    MinusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MinusBtn.Text = "- Distancia"
+    MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinusBtn.Font = Enum.Font.Gotham
+    MinusBtn.TextSize = 10
+    Instance.new("UICorner", MinusBtn).CornerRadius = UDim.new(0, 4)
+
+    MinusBtn.MouseButton1Click:Connect(function()
+        if _G.MaxDistance > 200 then
+            _G.MaxDistance = _G.MaxDistance - 200
+            DistLabel.Text = "Distancia Max: " .. _G.MaxDistance .. " studs"
+        end
+    end)
+
+    -- Texto de Intensidad / Fuerza del Aimlock
+    local IntensLabel = Instance.new("TextLabel", MainFrame)
+    IntensLabel.Size = UDim2.new(1, -20, 0, 18)
+    IntensLabel.Position = UDim2.new(0, 10, 0, 183)
+    IntensLabel.BackgroundTransparency = 1
+    IntensLabel.Text = "Fuerza Aimlock: 0.50"
+    IntensLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    IntensLabel.Font = Enum.Font.Gotham
+    IntensLabel.TextSize = 10
+    IntensLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Botones Intensidad (+ / -)
+    local PlusIntens = Instance.new("TextButton", MainFrame)
+    PlusIntens.Size = UDim2.new(0, 92, 0, 22)
+    PlusIntens.Position = UDim2.new(0, 10, 0, 203)
+    PlusIntens.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    PlusIntens.Text = "+ Fuerza"
+    PlusIntens.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PlusIntens.Font = Enum.Font.Gotham
+    PlusIntens.TextSize = 10
+    Instance.new("UICorner", PlusIntens).CornerRadius = UDim.new(0, 4)
+
+    PlusIntens.MouseButton1Click:Connect(function()
+        if _G.AimIntensity < 1.0 then
+            _G.AimIntensity = math.clamp(_G.AimIntensity + 0.1, 0.1, 1.0)
+            IntensLabel.Text = "Fuerza Aimlock: " .. string.format("%.2f", _G.AimIntensity)
+        end
+    end)
+
+    local MinusIntens = Instance.new("TextButton", MainFrame)
+    MinusIntens.Size = UDim2.new(0, 92, 0, 22)
+    MinusIntens.Position = UDim2.new(0, 118, 0, 203)
+    MinusIntens.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MinusIntens.Text = "- Fuerza"
+    MinusIntens.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinusIntens.Font = Enum.Font.Gotham
+    MinusIntens.TextSize = 10
+    Instance.new("UICorner", MinusIntens).CornerRadius = UDim.new(0, 4)
+
+    MinusIntens.MouseButton1Click:Connect(function()
+        if _G.AimIntensity > 0.1 then
+            _G.AimIntensity = math.clamp(_G.AimIntensity - 0.1, 0.1, 1.0)
+            IntensLabel.Text = "Fuerza Aimlock: " .. string.format("%.2f", _G.AimIntensity)
+        end
+    end)
+
+    -- Botón OFF (Ocultar Menú)
+    local OffBtn = Instance.new("TextButton", MainFrame)
+    OffBtn.Size = UDim2.new(1, -20, 0, 24)
+    OffBtn.Position = UDim2.new(0, 10, 0, 285)
+    OffBtn.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
+    OffBtn.Text = "Ocultar / OFF Menú"
+    OffBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    OffBtn.Font = Enum.Font.GothamBold
+    OffBtn.TextSize = 10
+    Instance.new("UICorner", OffBtn).CornerRadius = UDim.new(0, 4)
+
+    -- Botón flotante para volver a abrir el menú
+    local OpenButton = Instance.new("TextButton", ScreenGui)
+    OpenButton.Size = UDim2.new(0, 36, 0, 36)
+    OpenButton.Position = UDim2.new(0, 10, 0.5, -18)
+    OpenButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    OpenButton.Text = "⚡"
+    OpenButton.TextSize = 16
+    OpenButton.Visible = false
+    Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 8)
+    local OpenStroke = Instance.new("UIStroke", OpenButton)
+    OpenStroke.Color = Color3.fromRGB(255, 140, 0)
+    OpenStroke.Thickness = 2
+
+    OffBtn.MouseButton1Click:Connect(function()
+        MainFrame.Visible = false
+        OpenButton.Visible = true
+    end)
+
+    OpenButton.MouseButton1Click:Connect(function()
+        MainFrame.Visible = true
+        OpenButton.Visible = false
+    end)
+
+    -- Dibujo del FOV Rainbow
+    local FOVCircle = Drawing.new("Circle")
+    FOVCircle.Filled = false
+    FOVCircle.Thickness = 2
+    FOVCircle.Visible = false
+    FOVCircle.NumSides = 60
+
+    -- Sistema de Dibujo para Names y Tracers Rojos
+    local NamesCache = {}
+    local TracersCache = {}
+
+    local function CreateESP(player)
+        if player == LP then return end
+        
+        -- Text ESP (Names)
+        local nameObj = Drawing.new("Text")
+        nameObj.Visible = false
+        nameObj.Center = true
+        nameObj.Outline = true
+        nameObj.Font = 2
+        nameObj.Size = 13
+        nameObj.Color = Color3.fromRGB(255, 255, 255)
+        NamesCache[player] = nameObj
+        
+        -- Line ESP (Tracers Rojos)
+        local tracerObj = Drawing.new("Line")
+        tracerObj.Visible = false
+        tracerObj.Thickness = 1.5
+        tracerObj.Color = Color3.fromRGB(255, 0, 0)
+        TracersCache[player] = tracerObj
+    end
+
+    local function RemoveESP(player)
+        if NamesCache[player] then
+            NamesCache[player]:Remove()
+            NamesCache[player] = nil
+        end
+        if TracersCache[player] then
+            TracersCache[player]:Remove()
+            TracersCache[player] = nil
         end
     end
 
-    if target and _G.LexusActive then
-        Cam.CFrame = CFrame.new(Cam.CFrame.Position, target.Position)
-        local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            pcall(function() tool:Activate() end)
+    for _, p in ipairs(Players:GetPlayers()) do CreateESP(p) end
+    Players.PlayerAdded:Connect(CreateESP)
+    Players.PlayerRemoving:Connect(RemoveESP)
+
+    -- Algoritmo de Aimlock
+    local function GetClosestTarget()
+        local TargetPart = nil
+        local ClosestDistance = math.huge
+        
+        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return nil end
+        local myPosition = LP.Character.HumanoidRootPart.Position
+        local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                local targetPart = player.Character:FindFirstChild("Head") or player.Character:FindFirstChild("HumanoidRootPart")
+                
+                if humanoid and humanoid.Health > 0 and targetPart then
+                    local worldPos = targetPart.Position
+                    local distance = (worldPos - myPosition).Magnitude
+                    
+                    if distance <= _G.MaxDistance then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(worldPos)
+                        if onScreen then
+                            local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                            if screenDist <= _G.FOVRadius and screenDist < ClosestDistance then
+                                ClosestDistance = screenDist
+                                TargetPart = targetPart
+                            end
+                        end
+                    end
+                end
+            end
         end
+        return TargetPart
+    end
+
+    -- Motor Principal en Tiempo Real
+    RunService.RenderStepped:Connect(function()
+        pcall(function()
+            -- 1. FOV Rainbow
+            if _G.AimEnabled then
+                FOVCircle.Visible = true
+                FOVCircle.Radius = _G.FOVRadius
+                FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                FOVCircle.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+            else
+                FOVCircle.Visible = false
+            end
+
+            -- 2. Aimlock con intensidad ajustable
+            if _G.AimEnabled then
+                local Target = GetClosestTarget()
+                if Target then
+                    local currentCFrame = Camera.CFrame
+                    local targetCFrame = CFrame.new(currentCFrame.Position, Target.Position)
+                    Camera.CFrame = currentCFrame:Lerp(targetCFrame, _G.AimIntensity)
+                end
+            end
+
+            -- 3. Names y Tracers
+            for player, nameObj in pairs(NamesCache) do
+                local tracerObj = TracersCache[player]
+                local character = player.Character
+                local head = character and character:FindFirstChild("Head")
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                
+                local isValid = character and head and rootPart and humanoid and humanoid.Health > 0
+                
+                -- Gestionar Names
+                if _G.NamesEnabled and isValid then
+                    local headPos, onScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.8, 0))
+                    if onScreen then
+                        nameObj.Text = player.Name
+                        nameObj.Position = Vector2.new(headPos.X, headPos.Y)
+                        nameObj.Visible = true
+                    else
+                        nameObj.Visible = false
+                    end
+                else
+                    nameObj.Visible = false
+                end
+                
+                -- Gestionar Tracers Rojos
+                if _G.TracersEnabled and isValid and tracerObj then
+                    local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                    if onScreen then
+                        tracerObj.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        tracerObj.To = Vector2.new(rootPos.X, rootPos.Y)
+                        tracerObj.Visible = true
+                    else
+                        tracerObj.Visible = false
+                    end
+                elseif tracerObj then
+                    tracerObj.Visible = false
+                end
+            end
+        end)
+    end)
+end
+
+-- Lógica del botón de verificación
+CheckBtn.MouseButton1Click:Connect(function()
+    if TextBox.Text == CORRECT_KEY then
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 128)
+        StatusLabel.Text = "¡Key correcta! Cargando..."
+        task.wait(0.6)
+        LoadMainHub()
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        StatusLabel.Text = "Key incorrecta. Intenta de nuevo."
     end
 end)
