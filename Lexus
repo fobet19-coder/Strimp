@@ -1,5 +1,5 @@
 -- ==========================================
--- LEXUS PVP | SISTEMA DE VERIFICACIÓN DE LICENCIA
+-- LEXUS PVP | SCRIPT COMPLETO CON KEY SYSTEM (FIXED)
 -- ==========================================
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -7,7 +7,7 @@ local LP = Players.LocalPlayer
 
 local CORRECT_KEY = "LIC-PRD-SPI"
 
--- Eliminar interfaz previa si existe
+-- Eliminar interfaces previas si existen
 if CoreGui:FindFirstChild("LexusKeySystem") then
     CoreGui.LexusKeySystem:Destroy()
 end
@@ -460,15 +460,27 @@ local function LoadMainHub()
     end)
 end
 
--- Lógica del botón de verificación
-CheckBtn.MouseButton1Click:Connect(function()
-    if TextBox.Text == CORRECT_KEY then
+-- Lógica del botón de verificación (Mejorada para Delta)
+local function ValidateKey()
+    -- Limpiamos espacios accidentales al principio o final del texto
+    local enteredKey = TextBox.Text:gsub("^%s*(.-)%s*$", "%1")
+    
+    if enteredKey == CORRECT_KEY then
         StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 128)
         StatusLabel.Text = "¡Key correcta! Cargando..."
-        task.wait(0.6)
+        task.wait(0.5)
         LoadMainHub()
     else
         StatusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
         StatusLabel.Text = "Key incorrecta. Intenta de nuevo."
+    end
+end
+
+CheckBtn.MouseButton1Click:Connect(ValidateKey)
+
+-- Soporte adicional para que funcione también si presionan "Enter" en el teclado móvil
+TextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        ValidateKey()
     end
 end)
