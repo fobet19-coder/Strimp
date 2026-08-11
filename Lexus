@@ -1,5 +1,5 @@
 -- ==========================================
--- LEXUS PVP | SCRIPT COMPLETO CON KEY SYSTEM (FIXED)
+-- LEXUS PVP | SCRIPT COMPLETO CON KEY SYSTEM & UNVENTORY
 -- ==========================================
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -88,15 +88,16 @@ local function LoadMainHub()
     _G.AimIntensity = 0.5 
     _G.NamesEnabled = false
     _G.TracersEnabled = false
+    _G.UnventoryEnabled = false
 
-    -- Creación de la Interfaz Estilo Lexus PvP
+    -- Creación de la Interfaz Estilo Lexus PvP (Aumentamos un poco la altura para el nuevo botón)
     local ScreenGui = Instance.new("ScreenGui", CoreGui)
     ScreenGui.Name = "LexusPVPUI"
     ScreenGui.ResetOnSpawn = false
 
     local MainFrame = Instance.new("Frame", ScreenGui)
-    MainFrame.Size = UDim2.new(0, 220, 0, 325)
-    MainFrame.Position = UDim2.new(0, 30, 0.5, -162)
+    MainFrame.Size = UDim2.new(0, 220, 0, 355)
+    MainFrame.Position = UDim2.new(0, 30, 0.5, -177)
     MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -188,10 +189,61 @@ local function LoadMainHub()
         end
     end)
 
+    -- Botón Toggle Unventory (Invisibilidad)
+    local UnventoryBtn = Instance.new("TextButton", MainFrame)
+    UnventoryBtn.Size = UDim2.new(1, -20, 0, 28)
+    UnventoryBtn.Position = UDim2.new(0, 10, 0, 134)
+    UnventoryBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    UnventoryBtn.Text = "Unventory / Invis: [OFF]"
+    UnventoryBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    UnventoryBtn.Font = Enum.Font.GothamSemibold
+    UnventoryBtn.TextSize = 10
+    Instance.new("UICorner", UnventoryBtn).CornerRadius = UDim.new(0, 6)
+
+    UnventoryBtn.MouseButton1Click:Connect(function()
+        _G.UnventoryEnabled = not _G.UnventoryEnabled
+        if _G.UnventoryEnabled then
+            UnventoryBtn.Text = "Unventory / Invis: [ON]"
+            UnventoryBtn.TextColor3 = Color3.fromRGB(0, 255, 128)
+            UnventoryBtn.BackgroundColor3 = Color3.fromRGB(20, 50, 30)
+            
+            -- Ocultar partes del personaje localmente
+            if LP.Character then
+                for _, part in ipairs(LP.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.Transparency = 1
+                    elseif part:IsA("Decal") then
+                        part.Transparency = 1
+                    end
+                end
+            end
+        else
+            UnventoryBtn.Text = "Unventory / Invis: [OFF]"
+            UnventoryBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            UnventoryBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            
+            -- Restaurar visibilidad del personaje
+            if LP.Character then
+                for _, part in ipairs(LP.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        if part.Name == "Head" then
+                            part.Transparency = 0
+                        else
+                            -- Ajusta según tus accesorios o partes originales si es necesario
+                            part.Transparency = 0 
+                        end
+                    elseif part:IsA("Decal") then
+                        part.Transparency = 0
+                    end
+                end
+            end
+        end
+    end)
+
     -- Texto de Distancia
     local DistLabel = Instance.new("TextLabel", MainFrame)
     DistLabel.Size = UDim2.new(1, -20, 0, 18)
-    DistLabel.Position = UDim2.new(0, 10, 0, 135)
+    DistLabel.Position = UDim2.new(0, 10, 0, 168)
     DistLabel.BackgroundTransparency = 1
     DistLabel.Text = "Distancia Max: 1000 studs"
     DistLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -202,7 +254,7 @@ local function LoadMainHub()
     -- Botones Distancia (+ / -)
     local PlusBtn = Instance.new("TextButton", MainFrame)
     PlusBtn.Size = UDim2.new(0, 92, 0, 22)
-    PlusBtn.Position = UDim2.new(0, 10, 0, 155)
+    PlusBtn.Position = UDim2.new(0, 10, 0, 188)
     PlusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     PlusBtn.Text = "+ Distancia"
     PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -219,7 +271,7 @@ local function LoadMainHub()
 
     local MinusBtn = Instance.new("TextButton", MainFrame)
     MinusBtn.Size = UDim2.new(0, 92, 0, 22)
-    MinusBtn.Position = UDim2.new(0, 118, 0, 155)
+    MinusBtn.Position = UDim2.new(0, 118, 0, 188)
     MinusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     MinusBtn.Text = "- Distancia"
     MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -237,7 +289,7 @@ local function LoadMainHub()
     -- Texto de Intensidad / Fuerza del Aimlock
     local IntensLabel = Instance.new("TextLabel", MainFrame)
     IntensLabel.Size = UDim2.new(1, -20, 0, 18)
-    IntensLabel.Position = UDim2.new(0, 10, 0, 183)
+    IntensLabel.Position = UDim2.new(0, 10, 0, 216)
     IntensLabel.BackgroundTransparency = 1
     IntensLabel.Text = "Fuerza Aimlock: 0.50"
     IntensLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -248,7 +300,7 @@ local function LoadMainHub()
     -- Botones Intensidad (+ / -)
     local PlusIntens = Instance.new("TextButton", MainFrame)
     PlusIntens.Size = UDim2.new(0, 92, 0, 22)
-    PlusIntens.Position = UDim2.new(0, 10, 0, 203)
+    PlusIntens.Position = UDim2.new(0, 10, 0, 236)
     PlusIntens.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     PlusIntens.Text = "+ Fuerza"
     PlusIntens.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -265,7 +317,7 @@ local function LoadMainHub()
 
     local MinusIntens = Instance.new("TextButton", MainFrame)
     MinusIntens.Size = UDim2.new(0, 92, 0, 22)
-    MinusIntens.Position = UDim2.new(0, 118, 0, 203)
+    MinusIntens.Position = UDim2.new(0, 118, 0, 236)
     MinusIntens.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     MinusIntens.Text = "- Fuerza"
     MinusIntens.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -283,7 +335,7 @@ local function LoadMainHub()
     -- Botón OFF (Ocultar Menú)
     local OffBtn = Instance.new("TextButton", MainFrame)
     OffBtn.Size = UDim2.new(1, -20, 0, 24)
-    OffBtn.Position = UDim2.new(0, 10, 0, 285)
+    OffBtn.Position = UDim2.new(0, 10, 0, 315)
     OffBtn.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
     OffBtn.Text = "Ocultar / OFF Menú"
     OffBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -444,43 +496,4 @@ local function LoadMainHub()
                 
                 -- Gestionar Tracers Rojos
                 if _G.TracersEnabled and isValid and tracerObj then
-                    local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                    if onScreen then
-                        tracerObj.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                        tracerObj.To = Vector2.new(rootPos.X, rootPos.Y)
-                        tracerObj.Visible = true
-                    else
-                        tracerObj.Visible = false
-                    end
-                elseif tracerObj then
-                    tracerObj.Visible = false
-                end
-            end
-        end)
-    end)
-end
-
--- Lógica del botón de verificación (Mejorada para Delta)
-local function ValidateKey()
-    -- Limpiamos espacios accidentales al principio o final del texto
-    local enteredKey = TextBox.Text:gsub("^%s*(.-)%s*$", "%1")
-    
-    if enteredKey == CORRECT_KEY then
-        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 128)
-        StatusLabel.Text = "¡Key correcta! Cargando..."
-        task.wait(0.5)
-        LoadMainHub()
-    else
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-        StatusLabel.Text = "Key incorrecta. Intenta de nuevo."
-    end
-end
-
-CheckBtn.MouseButton1Click:Connect(ValidateKey)
-
--- Soporte adicional para que funcione también si presionan "Enter" en el teclado móvil
-TextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        ValidateKey()
-    end
-end)
+                    local rootPos, onScreen = Camera:WorldToVie
